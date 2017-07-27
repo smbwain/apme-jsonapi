@@ -1,0 +1,40 @@
+{
+  "name": "apme-jsonapi",
+  "version": "0.0.1",
+  "description": "Jsonapi express middleware for apme",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "mocha dist/tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smbwain/apme-jsonapi.git"
+  },
+  "keywords": [
+    "jsonapi",
+    "api"
+  ],
+  "author": "Roman Ditchuk",
+  "license": "ISC",
+  "dependencies": {
+    "async-mw": "0.0.1",
+    "joi": "10.6.0"
+  },
+  "engines": {
+    "node": ">=5"
+  },
+  "devDependencies": {
+    "@types/mocha": "2.2.41",
+    "@types/node": "8.0.13",
+    "body-parser": "1.17.2",
+    "express": "4.15.3",
+    "mocha": "3.4.2",
+    "request": "2.81.0",
+    "source-map-support": "0.4.15",
+    "typescript": "2.4.1"
+  },
+  "peerDependencies": {
+    "express": ">=4"
+  }
+}
