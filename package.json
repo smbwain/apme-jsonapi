@@ -35,6 +35,7 @@
     "typescript": "2.4.1"
   },
   "peerDependencies": {
-    "express": ">=4"
+    "express": ">=4",
+    "apme": ">=2"
   }
 }

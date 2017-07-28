@@ -1,7 +1,7 @@
 
 import * as asyncMW from 'async-mw';
 import * as querystring from 'querystring';
-import {Apme, Resource, ReadableResourcesList} from 'apme';
+import {ApmeInterface, ResourceInterface, ListInterface, CollectionInterface, ContextInterface, RelationLink} from 'apme';
 import {badRequestError, notFoundError} from './errors';
 import {validate} from './validate';
 import * as Joi from 'joi';
@@ -45,7 +45,7 @@ const schemas : any = {};
         )
     });
     schemas.relationshipToMany = Joi.object().unknown(false).keys({
-        data: Joi.array(rel)
+        data: Joi.array().items(rel)
     });
     schemas.update = Joi.object().required().keys({
         data: Joi.object().required().unknown(false).keys({
@@ -61,10 +61,10 @@ const schemas : any = {};
 }
 
 class JsonApi {
-    private apme : Apme;
+    private apme : ApmeInterface;
     private url : string;
 
-    constructor(apme: Apme, {url = '/'} : {url?: string} = {}) {
+    constructor(apme: ApmeInterface, {url = '/'} : {url?: string} = {}) {
         this.apme = apme;
         this.url = url;
     }
@@ -324,16 +324,17 @@ class JsonApi {
         }));
 
         router.get('/:collection/:id/relationships/:relName', asyncMW(async req => {
-            const {collection} = req;
-            const {type, id} = req;
-            const {relName} = req.params;
+            const collection : CollectionInterface = req.collection;
+            const {type, id} : {type: string, id: string} = req;
+            const relName : string = req.params.relName;
+            const context : ContextInterface = req.apmeContext;
 
             const rel = collection.rels[relName];
             if(!rel) {
                 throw notFoundError('No relation with such name');
             }
 
-            const mainResource = await req.apmeContext.resource(type, id).load();
+            const mainResource = await context.resource(type, id).load();
             if(!mainResource.exists) {
                 throw notFoundError();
             }
@@ -407,7 +408,7 @@ class JsonApi {
         }
     }
 
-    private packResource(resource : Resource) : any {
+    private packResource(resource : ResourceInterface.Readable) : any {
         const collection = this.apme.collection(resource.type);
         const data : any = {
             id: resource.id,
@@ -443,30 +444,30 @@ class JsonApi {
         return data;
     }
 
-    private packResourcesListItems(resourceList: ReadableResourcesList) : any {
+    private packResourcesListItems(resourceList: ListInterface.Readable) : any {
         return resourceList.items.map(resource => this.packResource(resource));
     }
 
-    private packResourceRef(resource : Resource) : any {
+    private packResourceRef(resource : ResourceInterface.Identifier) : any {
         return {
             id: resource.id,
             type: resource.type
         };
     }
 
-    private packRefData(value : any) : any {
-        if(value.data) {
-            return this.packResourceRef(value as Resource);
-        } else if(value.items) {
-            return (value as ReadableResourcesList).items.map(resource => this.packResourceRef(resource));
-        } else if(value === null) {
+    private packRefData(value : ResourceInterface.Loadable | RelationLink) : any {
+        if((value as RelationLink).one) {
+            return this.packResourceRef((value as RelationLink).one);
+        } else if((value as RelationLink).many) {
+            return ((value as RelationLink).many as ListInterface.Readable).items.map(resource => this.packResourceRef(resource));
+        } else /*if(value === null)*/ {
             return null;
-        } else {
+        } /*else {
             throw new Error();
-        }
+        }*/
     }
 }
 
-export const jsonApi = options => (apme: Apme) => {
+export const jsonApi = options => (apme: ApmeInterface) => {
     return new JsonApi(apme, options);
 };

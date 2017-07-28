@@ -77,8 +77,8 @@ describe('simple perms', () => {
                         return !!(context.req && context.req.user);
                     }
                 },
-                write: resource => {
-                    return !!(resource.context.req && resource.context.req.user && (resource.context.req.user.id == '999' || resource.context.req.user.id == resource.id));
+                write: ({resource, context}) => {
+                    return !!(context.req && context.req.user && (context.req.user.id == '999' || context.req.user.id == resource.id));
                 }
             }
         });
