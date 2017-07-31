@@ -1,10 +1,10 @@
-import {validationError} from './errors';
+import {errors} from 'apme';
 
 export function validate(value, schema, text) {
     if(schema) {
         const validation = schema.validate(value);
         if (validation.error) {
-            throw validationError(validation.error, text);
+            throw errors.validation(validation.error, text);
         }
         return validation.value;
     } else {

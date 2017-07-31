@@ -1,8 +1,7 @@
 import 'source-map-support/register';
 
 import Apme from 'apme';
-import {jsonErrorHandler} from '../errors';
-import {jsonApi} from '../index';
+import {jsonApi, jsonErrorHandler} from '../index';
 
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
@@ -89,7 +88,7 @@ describe('simple perms', () => {
         app.use((req, res, next) => {
             const id = req.get('x-user');
             if(id) {
-                req.user = {
+                (req as any).user = {
                     id
                 };
             }
@@ -104,9 +103,7 @@ describe('simple perms', () => {
         app.use(
             '/api',
             api.expressInitMiddleware(),
-            api.expressJsonApiRouter({
-                url: '/api/'
-            }),
+            api.expressJsonApiRouter(),
             jsonErrorHandler()
         );
         server = app.listen(TEST_PORT, done);

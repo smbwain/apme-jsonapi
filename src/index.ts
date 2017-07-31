@@ -1,8 +1,7 @@
 
 import * as asyncMW from 'async-mw';
 import * as querystring from 'querystring';
-import {ApmeInterface, ResourceInterface, ListInterface, CollectionInterface, ContextInterface, RelationLink} from 'apme';
-import {badRequestError, notFoundError} from './errors';
+import {ApmeInterface, ResourceInterface, ListInterface, CollectionInterface, ContextInterface, RelationLink, errors} from 'apme';
 import {validate} from './validate';
 import * as Joi from 'joi';
 
@@ -134,7 +133,7 @@ class JsonApi {
 
             const resource = await req.apmeContext.resource(type, id).load();
             if(!resource.exists) {
-                throw notFoundError();
+                throw errors.notFound();
             }
 
             const fields = parseFields(req.query.fields);
@@ -166,7 +165,7 @@ class JsonApi {
 
                 // check type
                 if(body.data.type && body.data.type != req.type) {
-                    throw badRequestError('Wrong "type" passed in document');
+                    throw errors.badRequest('Wrong "type" passed in document');
                 }
 
                 let id = body.data.id;
@@ -175,7 +174,7 @@ class JsonApi {
                 for(const relName in passedRels) {
                     const rel = collection.rels[relName];
                     if(!rel) {
-                        throw badRequestError('Bad relation name');
+                        throw errors.badRequest('Bad relation name');
                     }
                     const passedRelData = passedRels[relName].data;
                     let relValue;
@@ -191,7 +190,7 @@ class JsonApi {
                 if(patch) {
                     if(id) {
                         if (id != req.id) {
-                            throw badRequestError('Wrong "id" passed in document');
+                            throw errors.badRequest('Wrong "id" passed in document');
                         }
                     } else {
                         id = req.id;
@@ -199,7 +198,7 @@ class JsonApi {
                 } else {
                     if(id) {
                         if(!collection.passId || (typeof collection.passId == 'function' && !(await collection.passId(req.apmeContext, id)))) {
-                            throw badRequestError('Passing id is not allowed');
+                            throw errors.badRequest('Passing id is not allowed');
                         }
                     } else {
                         id = await collection.generateId(data, req.apmeContext);
@@ -211,7 +210,7 @@ class JsonApi {
                 if(patch) {
                     await resource.update(data);
                     if(!resource.exists) {
-                        throw notFoundError();
+                        throw errors.notFound();
                     }
                 } else {
                     await resource.create(data);
@@ -238,7 +237,7 @@ class JsonApi {
 
         router.delete('/:collection/:id', asyncMW(async (req, res) => {
             if(!await req.apmeContext.resource(req.type, req.id).remove()) {
-                throw notFoundError();
+                throw errors.notFound();
             }
 
             res.status(204).send();
@@ -252,12 +251,12 @@ class JsonApi {
 
             const rel = collection.rels[relName];
             if(!rel) {
-                throw notFoundError('No relation with such name');
+                throw errors.notFound('No relation with such name');
             }
 
             const mainResource = await req.apmeContext.resource(type, id).load();
             if(!mainResource.exists) {
-                throw notFoundError();
+                throw errors.notFound();
             }
 
             const fields = parseFields(req.query.fields);
@@ -331,12 +330,12 @@ class JsonApi {
 
             const rel = collection.rels[relName];
             if(!rel) {
-                throw notFoundError('No relation with such name');
+                throw errors.notFound('No relation with such name');
             }
 
             const mainResource = await context.resource(type, id).load();
             if(!mainResource.exists) {
-                throw notFoundError();
+                throw errors.notFound();
             }
 
             /*let data;
@@ -396,12 +395,12 @@ class JsonApi {
         for(const collectionName in fields) {
             const collection = this.apme.collection(collectionName);
             if(!collection) {
-                throw badRequestError(`Unknown collection ${collectionName}`);
+                throw errors.badRequest(`Unknown collection ${collectionName}`);
             }
             if(collection.fieldsToGet) {
                 for(const fieldName of fields[collectionName]) {
                     if(!collection.fieldsToGet.has(fieldName)) {
-                        throw badRequestError(`Unknown attribute or relationship "${collectionName}"."${fieldName}"`);
+                        throw errors.badRequest(`Unknown attribute or relationship "${collectionName}"."${fieldName}"`);
                     }
                 }
             }
@@ -468,6 +467,26 @@ class JsonApi {
     }
 }
 
-export const jsonApi = options => (apme: ApmeInterface) => {
+export const jsonApi = (options : {url?: string}) => (apme: ApmeInterface) => {
     return new JsonApi(apme, options);
 };
+
+export function jsonErrorHandler(options : {
+    debug?: boolean,
+    errorLog?: (err) => void
+} = {}) : (err, req, res, next) => void {
+    const debug = ('debug' in options) ? !!options.debug : true;
+    const errorLog = options.errorLog || (err => { console.error(err.stack || err) });
+    return (err, req, res, next) => {
+        errorLog(err);
+        res.status(err.httpCode || 500).json({
+            errors: [{
+                title: err.message,
+                meta: {
+                    stack: (debug && err.stack) ? err.stack.split('\n') : undefined,
+                    validation: err.validation
+                }
+            }]
+        });
+    };
+}

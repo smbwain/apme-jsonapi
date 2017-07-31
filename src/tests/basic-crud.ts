@@ -1,8 +1,7 @@
 import 'source-map-support/register';
 
 import Apme from 'apme';
-import {jsonErrorHandler} from '../errors';
-import {jsonApi} from '../index';
+import {jsonApi, jsonErrorHandler} from '../..';
 import * as Joi from 'joi';
 
 import * as express from 'express';
@@ -91,12 +90,11 @@ describe('basic crud', () => {
                 return contentType == 'application/vnd.api+json' || contentType == 'application/json';
             }
         }));
+
         app.use(
             '/api',
             api.expressInitMiddleware(),
-            api.expressJsonApiRouter({
-                url: '/api/'
-            }),
+            api.expressJsonApiRouter(),
             jsonErrorHandler()
         );
         server = app.listen(TEST_PORT, done);

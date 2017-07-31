@@ -1,8 +1,7 @@
 import 'source-map-support/register';
 
 import Apme from 'apme';
-import {jsonErrorHandler} from '../errors';
-import {jsonApi} from '../index';
+import {jsonApi, jsonErrorHandler} from '../..';
 
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
@@ -119,9 +118,7 @@ describe('rels', () => {
         app.use(
             '/api',
             api.expressInitMiddleware(),
-            api.expressJsonApiRouter({
-                url: '/api/'
-            }), jsonErrorHandler()
+            api.expressJsonApiRouter(), jsonErrorHandler()
         );
         server = app.listen(TEST_PORT, done);
     });
