@@ -1,7 +1,7 @@
 {
   "name": "apme-jsonapi",
   "version": "0.0.1",
-  "description": "Jsonapi express middleware for apme",
+  "description": "Json-api plugin for apme",
   "main": "dist/index.js",
   "types": "types.d.ts",
   "scripts": {
