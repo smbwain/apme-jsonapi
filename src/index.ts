@@ -41,7 +41,7 @@ const schemas : any = {};
         data: Joi.alternatives().required().try(
             Joi.array().items(rel),
             rel
-        )
+        ).allow(null)
     });
     schemas.relationshipToMany = Joi.object().unknown(false).keys({
         data: Joi.array().items(rel)
